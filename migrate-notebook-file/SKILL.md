@@ -21,9 +21,41 @@ This skill handles direct editing of `.ipynb` notebook files to make them compat
 1. **Check if running in Snowsight Workspaces** (browser-based IDE with notebook service)
 2. **Check if running locally** (Cortex Code desktop, VS Code, etc.)
 
-This affects how cell references can be handled (see Step 5).
+This affects how cell references can be handled (see Step 6).
 
-### Step 1: Set Explicit Session Context
+### Step 1: Check and Add Missing Imports
+**CRITICAL: Old Snowflake notebooks had certain functions available globally that MUST be explicitly imported in Workspaces.**
+
+Scan all notebook cells for function calls and verify their imports exist. Key functions that need imports:
+
+| Function | Required Import |
+|----------|-----------------|
+| `get_active_session()` | `from snowflake.snowpark.context import get_active_session` |
+| `display()` | Built-in in Jupyter, but add `from IPython.display import display` if missing |
+| `root` (Logging) | `from snowflake.snowpark import logging; root = logging.getLogger()` |
+
+**Workflow:**
+1. **Scan for function usage** - Look for calls to `get_active_session()`, `display()`, `root.info()`, etc.
+2. **Check existing imports** - Search import cells for the required import statements
+3. **Add missing imports** - If a function is used but not imported, add the import to the first code cell or create a new imports cell
+
+**Example - `get_active_session()` migration:**
+```python
+# OLD (worked in legacy notebooks - globally available):
+session = get_active_session()
+
+# NEW (required in Workspaces):
+from snowflake.snowpark.context import get_active_session
+session = get_active_session()
+```
+
+**Common patterns to detect:**
+- `session = get_active_session()` → needs `from snowflake.snowpark.context import get_active_session`
+- `get_active_session().sql(...)` → same import needed
+- `root.info(...)` or `root.warning(...)` → needs logging import
+- `display(df)` → usually works, but add IPython import if errors occur
+
+### Step 2: Set Explicit Session Context
 Review notebook cells for references to session context that may have been implicitly set. Add explicit setup at the start of notebooks:
 
 ```python
@@ -44,13 +76,13 @@ If context values cannot be determined, prompt the user for:
 - Warehouse name
 - Role name (optional)
 
-### Step 2: Preserve SQL Cells
+### Step 3: Preserve SQL Cells
 SQL cells should be left unchanged. They are compatible with Notebooks in Workspaces as-is. Identify SQL cells by:
 - `%%sql` magic command at the start
 - Native SQL cell type in notebook metadata
 - Cells containing only SQL statements (SELECT, CREATE, INSERT, etc.) with no Python code
 
-### Step 3: Remove Streamlit Dependencies
+### Step 4: Remove Streamlit Dependencies
 For each notebook file:
 1. Remove `import streamlit` and `import streamlit as st` statements
 2. Convert Streamlit UI components to Jupyter equivalents (see `references/streamlit-conversions.md`)
@@ -58,14 +90,14 @@ For each notebook file:
 4. Add required imports (plotly) at the top of the notebook
 5. Remove or convert caching decorators (`@st.cache_data`, `@st.cache_resource`)
 
-### Step 4: Verify Conversion
+### Step 5: Verify Conversion
 After editing:
 1. Check that no `st.` references remain: search for `st\.` pattern
 2. Verify all required imports are present (plotly.express if charts were converted)
 3. Run the notebook to confirm no import errors or runtime failures
 4. Visually confirm outputs display correctly
 
-### Step 5: Migrate Cell References
+### Step 6: Migrate Cell References
 **CRITICAL: Cell reference syntax is INCOMPATIBLE between legacy and Workspaces notebooks.**
 
 #### Legacy Notebook Cell References:
