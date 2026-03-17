@@ -51,8 +51,39 @@ This skill guides the migration of Snowflake quickstart **documentation (.md fil
 
 ## Workflow
 
+### Step 0: Get Developer Guide Link and Clone Directory (MANDATORY)
+**ALWAYS prompt the user for the developer guide link first:**
+
+"Please provide the Snowflake developer guide link for the quickstart you want to migrate (e.g., `https://www.snowflake.com/en/developers/guides/intro-to-machine-learning-with-snowpark-ml-for-python/`)."
+
+**After receiving the link, prompt for the clone directory:**
+
+"Which directory should I clone/use the git repositories in? (e.g., `~/repos`, `/Users/you/projects`)"
+
+**After receiving the directory:**
+1. Extract the quickstart name from the URL (the last path segment, e.g., `intro-to-machine-learning-with-snowpark-ml-for-python`)
+2. Check if `sfquickstarts` repo already exists in the specified directory:
+   - **If it exists:** Prompt user for confirmation: "The sfquickstarts repo already exists at `<directory>/sfquickstarts`. Should I run `git pull` to update it? (yes/no)"
+     - If yes: Run `git pull` in the existing repo
+     - If no: Use the existing repo as-is
+   - **If it doesn't exist:** Clone the sfquickstarts repo:
+     ```bash
+     git clone https://github.com/Snowflake-Labs/sfquickstarts.git <directory>/sfquickstarts
+     ```
+3. Navigate to the specific quickstart directory: `<directory>/sfquickstarts/site/sfguides/src/<quickstart-name>/`
+4. If the quickstart references any related code repositories (e.g., `https://github.com/Snowflake-Labs/sfguide-...`):
+   - **If the repo already exists in the directory:** Prompt user: "The repo `<repo-name>` already exists at `<directory>/<repo-name>`. Should I run `git pull` to update it? (yes/no)"
+     - If yes: Run `git pull` in the existing repo
+     - If no: Use the existing repo as-is
+   - **If it doesn't exist:** Clone into the specified directory:
+     ```bash
+     git clone <related-repo-url> <directory>/<repo-name>
+     ```
+
+**CRITICAL:** All repos must be cloned into the user-specified directory to allow for easy access and modification. Do NOT use /tmp or any temporary directories.
+
 ### Step 1: Analyze Current Quickstart
-1. Read the existing quickstart markdown file
+1. Read the existing quickstart markdown file from the cloned sfquickstarts repo
 2. Identify the notebook creation pattern - look for variations of:
    - `CREATE NOTEBOOK ... FROM '@<stage>...'`
    - `CREATE GIT REPOSITORY` or git stage references
@@ -181,10 +212,22 @@ Check if the quickstart references an external code repository:
 2. Look for `ORIGIN = 'https://github.com/...'` in SQL code blocks
 3. Check for "GitHub Repo" links
 
+**If a code repository is found:**
+Check if the repo already exists in the user-specified directory:
+- **If it exists:** Prompt user: "The repo `<repo-name>` already exists at `<directory>/<repo-name>`. Should I run `git pull` to update it? (yes/no)"
+  - If yes: Run `git pull` in the existing repo
+  - If no: Use the existing repo as-is
+- **If it doesn't exist:** Clone into the user-specified directory:
+  ```bash
+  git clone <code-repo-url> <directory>/<repo-name>
+  ```
+
 **If NO code repository is found:**
 Prompt: "I couldn't find a linked code repository in this quickstart. Please provide:
-1. The path to the code repository (local or GitHub URL)
+1. The GitHub URL to the code repository
 2. Or confirm that this quickstart has no associated notebook code"
+
+If the user provides a URL, follow the same clone/pull logic above into the user-specified directory.
 
 ### Step 4: Analyze Git Repo Stage Usage
 **CRITICAL: Do not automatically remove git repo stage creation.**
