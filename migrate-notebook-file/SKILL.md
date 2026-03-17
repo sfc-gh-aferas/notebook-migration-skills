@@ -70,6 +70,8 @@ Look for patterns that assume context is already set:
 - `session.sql("SELECT * FROM TABLE_NAME")` with unqualified references
 - `session.use_schema()` calls that reference variables defined elsewhere
 
+Always place session creation and context setting before any SQL cells or use of session, preferably in the first cell of the notebook.
+
 If context values cannot be determined, prompt the user for:
 - Database name
 - Schema name
