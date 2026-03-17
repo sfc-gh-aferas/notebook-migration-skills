@@ -12,6 +12,7 @@ This skill handles direct editing of `.ipynb` notebook files to make them compat
 - **ONLY edit `.ipynb` notebook files** - do NOT modify standalone Streamlit applications (`.py` files)
 - This skill is specifically for removing Streamlit from notebooks, NOT from separate Streamlit apps
 - **Cell references CANNOT be directly migrated** - legacy `cell_name.to_df()` syntax must be manually updated after execution in Workspaces
+- **All filesystem writes MUST use `/tmp` folder** - when converting code that writes to the filesystem (e.g., saving files, writing CSVs, creating temp files), always use `/tmp/` as the base directory
 
 ## Workflow
 
@@ -98,6 +99,49 @@ After editing:
 2. Verify all required imports are present (plotly.express if charts were converted)
 3. Run the notebook to confirm no import errors or runtime failures
 4. Visually confirm outputs display correctly
+
+### Step 5.5: Ensure Filesystem Writes Use /tmp
+**CRITICAL: All filesystem write operations must use the `/tmp` folder.**
+
+Scan all notebook cells for filesystem write operations and update paths to use `/tmp`:
+
+**Patterns to search for:**
+- `open(..., 'w')` or `open(..., 'wb')` - file writes
+- `.to_csv(...)` - DataFrame CSV exports
+- `.to_parquet(...)` - DataFrame Parquet exports
+- `.to_excel(...)` - DataFrame Excel exports
+- `.to_json(...)` - DataFrame JSON exports
+- `with open(...) as f:` where mode includes writing
+- `Path(...).write_text(...)` or `Path(...).write_bytes(...)`
+- `shutil.copy(...)`, `shutil.move(...)` - file operations
+- `os.makedirs(...)`, `os.mkdir(...)` - directory creation
+- `pickle.dump(...)` - pickle file writes
+- `joblib.dump(...)` - joblib file writes
+- `model.save(...)` - model saving
+
+**Conversion examples:**
+```python
+# Before
+df.to_csv("output.csv")
+df.to_csv("data/results.csv")
+with open("report.txt", "w") as f:
+    f.write(content)
+model.save("my_model.pkl")
+
+# After - Always use /tmp folder
+df.to_csv("/tmp/output.csv")
+df.to_csv("/tmp/data/results.csv")  # Create /tmp/data if needed
+with open("/tmp/report.txt", "w") as f:
+    f.write(content)
+model.save("/tmp/my_model.pkl")
+```
+
+**If subdirectories are needed:**
+```python
+import os
+os.makedirs("/tmp/data", exist_ok=True)
+df.to_csv("/tmp/data/results.csv")
+```
 
 ### Step 6: Migrate Cell References
 **CRITICAL: Cell reference syntax is INCOMPATIBLE between legacy and Workspaces notebooks.**

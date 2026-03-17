@@ -330,8 +330,8 @@ uploaded = st.file_uploader("Choose file")
 if uploaded:
     df = pd.read_csv(uploaded)
 
-# After - Use file path directly
-file_path = "/path/to/file.csv"  # User must update path
+# After - Use file path directly (must be in /tmp folder)
+file_path = "/tmp/file.csv"  # User must update path - all files must be in /tmp
 df = pd.read_csv(file_path)
 ```
 
