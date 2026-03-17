@@ -8,7 +8,7 @@ description: "Migrate Snowflake quickstart guide .md files from old Streamlit-ba
 ## Overview
 This skill guides the migration of Snowflake quickstart **documentation (.md files only)** from old Streamlit-based notebook format to the new Jupyter Notebooks in Workspaces format.
 
-**IMPORTANT: This skill only updates markdown documentation files. For actual code changes:**
+**IMPORTANT: This skill only updates markdown documentation files. REQUIRED: invoke these skills for any related repos and notebook files:**
 - Use `migrate-notebook` skill for repository-level notebook migrations
 - Use `migrate-notebook-file` skill for individual .ipynb file migrations
 
